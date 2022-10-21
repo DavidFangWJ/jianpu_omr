@@ -25,18 +25,26 @@ class Network1stLine(nn.Module):
             nn.Linear(1024, 128),
             nn.ReLU(),
             nn.Linear(128, 16),
-            nn.ReLU(),
-            nn.Linear(16, 2)
+            nn.ReLU()
         )
+        # Output 1: Whether there is a music line
+        self.binary = nn.Sequential(
+            nn.Linear(16, 1),
+            nn.Sigmoid()
+        )
+        # Output 2: The start and end y-position of music line
+        self.coord = nn.Linear(16, 2)
 
     def forward(self, x):
         x = self.convs(x)
         x = torch.flatten(x, 1)
-        return self.dense(x)
+        x = self.dense(x)
+        binary = self.binary(x)
+        coord = self.coord(x)
+        return torch.cat((binary, coord), 1)
 
 
 def get_model_1st_line():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     return Network1stLine().to(device), device
-
