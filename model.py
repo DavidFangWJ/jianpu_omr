@@ -1,4 +1,3 @@
-import os
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -48,3 +47,24 @@ def get_model_1st_line():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     return Network1stLine().to(device), device
+
+
+def loss_model_1st_line(target: torch.Tensor, result: torch.Tensor):
+    """
+    The custom loss function for my model.
+    The value is in the structure of n×3 array, with the first column being the
+    likelihood that there is a musical line, and the next two column being the
+    upper and lower boundary of music notes, normalized to be as if the side
+    length of the section is 1.
+    The first column is kept as it is to be the loss derived from the
+    probability; then the difference of the next two column is multiplied,
+    because when there is no music lines, these two columns do not matter.
+    """
+    target_1st = target[:, 0]
+    target_coord = target[:, 1:]
+    result_1st = result[:, 0]
+    result_coord = result[:, 1:]
+
+    loss_likelihood = torch.mean((target_1st - result_1st) ** 2)
+    loss_coord = torch.mean(target_1st * (target_coord - result_coord) ** 2)
+    return loss_likelihood + loss_coord
